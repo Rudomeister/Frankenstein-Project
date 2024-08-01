@@ -2,7 +2,6 @@ import json
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from transformers import BertTokenizer, BertForSequenceClassification
 import numpy as np
-import torch
 from scipy.special import softmax
 
 def analyze_sentiment_with_vader(description):
