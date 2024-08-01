@@ -35,7 +35,6 @@ def get_ai_response(client, messages):
         top_p=1,
         stream=False
     )
-    message = response.choices[0].message
     return response.choices[0].message.content.strip()
 
 if __name__ == "__main__":

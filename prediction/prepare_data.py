@@ -1,6 +1,5 @@
 import pandas as pd
 import json
-import os
 import logging
 
 # Sett opp logging

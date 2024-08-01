@@ -1,7 +1,7 @@
 import yfinance as yf
 import json
 import os
-import datetime as dt
+
 
 # Bygg stien til config.json relativt til skriptets plassering
 config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
