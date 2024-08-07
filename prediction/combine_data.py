@@ -2,49 +2,25 @@ import pandas as pd
 import json
 import logging
 import os
-import pandas_ta as ta
-import sys
 
 # Sett opp logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
-with open(config_path, 'r') as file:
-    config = json.load(file)
-
-project_root = os.path.dirname(os.path.abspath(__file__))
-if len(sys.argv) < 2:
-    raise ValueError("Symbol argument is missing. Usage: python prepare_data.py <symbol>")
-
-symbol = sys.argv[1]
 
 # Les konfigurasjonsfilen
 config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
 with open(config_path, 'r') as file:
     config = json.load(file)
 
-def calculate_technical_indicators(df):
-    # Beregn RSI
-    df['RSI'] = ta.rsi(df['Close'], length=14)
-    
-    # Beregn MACD
-    macd = ta.macd(df['Close'], fast=12, slow=26, signal=9)
-    if macd is not None:
-        df['MACD'] = macd['MACD_12_26_9']
-        df['MACD_signal'] = macd['MACDs_12_26_9']
-        df['MACD_diff'] = macd['MACDh_12_26_9']
-    return df
+symbol = config['symbol']
 
-def prepare_data(symbol):
+def combine_data(symbol):
     try:
-        # Les inn historiske data
+        # Les inn tekniske data
         project_root = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(project_root, '..', 'data')
-        historical_data_path = os.path.join(data_dir, f'historical_{symbol}_data.csv')
-        historical_data = pd.read_csv(historical_data_path)
-        logging.info(f'Read {len(historical_data)} rows of historical data from {historical_data_path}')
-
-        # Beregn tekniske indikatorer på historiske data
-        historical_data = calculate_technical_indicators(historical_data)
+        technical_data_path = os.path.join(data_dir, f'technical_{symbol}_data.csv')
+        technical_data = pd.read_csv(technical_data_path)
+        logging.info(f"Read {len(technical_data)} rows of technical data from {technical_data_path}")
 
         # Les inn sentiment data
         sentiment_data_path = os.path.join(data_dir, f'processed_{symbol}_news.json')
@@ -62,18 +38,18 @@ def prepare_data(symbol):
         }).reset_index()
         sentiment_df['Date'] = pd.to_datetime(sentiment_df['Date'])
 
-        # Sjekk om 'Date' kolonnen eksisterer i historical_data, hvis ikke, bruk den første kolonnen som dato
-        if 'Date' not in historical_data.columns:
-            historical_data.rename(columns={'Datetime': 'Date'}, inplace=True)
+        # Sjekk om 'Date' kolonnen eksisterer i technical_data, hvis ikke, bruk den første kolonnen som dato
+        if 'Date' not in technical_data.columns:
+            technical_data.rename(columns={'Datetime': 'Date'}, inplace=True)
 
-        historical_data['Date'] = pd.to_datetime(historical_data['Date']).dt.tz_localize(None)
+        technical_data['Date'] = pd.to_datetime(technical_data['Date']).dt.tz_localize(None)
 
         # Ekstra logging for å se de første radene av hver data frame
-        logging.info(f"First few rows of historical data:\n{historical_data.head()}")
+        logging.info(f"First few rows of technical data:\n{technical_data.head()}")
         logging.info(f"First few rows of sentiment data:\n{sentiment_df.head()}")
 
         # Kombiner data basert på 'Date'
-        combined_data = pd.merge(historical_data, sentiment_df, on='Date', how='outer')
+        combined_data = pd.merge(technical_data, sentiment_df, on='Date', how='outer')
         logging.info(f'Combined data contains {len(combined_data)} rows after merging')
 
         combined_data = combined_data[['Date', 'Close', 'RSI', 'MACD', 'MACD_signal', 'MACD_diff', 'combined_score']].dropna()
@@ -85,8 +61,7 @@ def prepare_data(symbol):
         logging.info(f"Combined data for {symbol} saved to csv file at {combined_data_path}")
 
     except Exception as e:
-        logging.error(f"Error in preparing data: {e}")
-        raise
+        logging.error(f"Error in combining data: {e}")
 
 if __name__ == "__main__":
-    prepare_data(symbol)
+    combine_data(symbol)

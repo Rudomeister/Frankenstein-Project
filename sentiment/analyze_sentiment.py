@@ -3,6 +3,13 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from transformers import BertTokenizer, BertForSequenceClassification
 import numpy as np
 from scipy.special import softmax
+import os
+
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
+with open(config_path, 'r') as file:
+    config = json.load(file)
+    
+symbol = config['symbol']
 
 def analyze_sentiment_with_vader(description):
     analyzer = SentimentIntensityAnalyzer()
@@ -25,8 +32,8 @@ def analyze_sentiment_with_bert(description):
 def analyze_sentiment(news_articles):
     processed_news = []
     for article in news_articles:
-        description = article['description'] if article['description'] else ''
-        date = article['publishedAt'] if 'publishedAt' in article else None
+        description = article.get('description', '')
+        date = article.get('publishedAt', None)
 
         vader_sentiment, vader_score = analyze_sentiment_with_vader(description)
         bert_sentiment, bert_score = analyze_sentiment_with_bert(description)
@@ -36,9 +43,9 @@ def analyze_sentiment(news_articles):
         
         processed_news.append({
             'description': description,
-            'date': date,  # Inkluderer datoen
+            'date': date,
             'vader_sentiment': vader_sentiment,
-            'vader_score': float(vader_score),  # Konverter til vanlig float
+            'vader_score': float(vader_score),
             'bert_sentiment': bert_sentiment,
             'bert_score': bert_score,
             'combined_sentiment': combined_sentiment,
@@ -47,10 +54,11 @@ def analyze_sentiment(news_articles):
     return processed_news
 
 if __name__ == "__main__":
-    SYMBOL = 'BTC-USD'
-    with open(f'raw_{SYMBOL}_news.json', 'r') as file:
+    with open(f'data/raw_{symbol}_news.json', 'r') as file:
         news_articles = json.load(file)
     
     processed_news = analyze_sentiment(news_articles)
-    with open(f'processed_{SYMBOL}_news.json', 'w') as file:
+    with open(f'data/processed_{symbol}_news.json', 'w') as file:
         json.dump(processed_news, file)
+    
+    print(f"Sentiment analysis for {symbol} completed and saved.")

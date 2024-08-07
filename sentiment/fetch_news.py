@@ -2,7 +2,7 @@ import requests
 import json
 import os
 
-config_path = os.path.join(os.path.dirname(__file__), '.', 'config.json')
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
 with open(config_path, 'r') as file:
     config = json.load(file)
 
@@ -16,5 +16,5 @@ def fetch_news(symbol):
 
 if __name__ == "__main__":
     news_articles = fetch_news(symbol)
-    with open(f'raw_{symbol}_news.json', 'w') as file:
+    with open(f'data/raw_{symbol}_news.json', 'w') as file:
         json.dump(news_articles, file)

@@ -1,22 +1,25 @@
 import yfinance as yf
-import json
 import os
+import logging
+import json
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Bygg stien til config.json relativt til skriptets plassering
-config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
-
-# Laste inn konfigurasjonsfilen
-with open(config_path, 'r') as file:
-    config = json.load(file)
-
-symbol = config['symbol']
-
-def fetch_historical_data(symbol=symbol, period='1mo',):
-    data = yf.download(symbol, period=period, interval="5m")
+def fetch_historical_data(symbol):
+    ticker = yf.Ticker(symbol)
+    data = ticker.history(period="max")
     return data
 
 if __name__ == "__main__":
-    data = fetch_historical_data(symbol)
-    data.to_csv(f'{symbol}_historical.csv')
-    print(f"Historical data for {symbol} saved to csv file")
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
+    with open(config_path, 'r') as file:
+        config = json.load(file)
+    
+    symbol = config['symbol']
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(project_root, '..', 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    
+    historical_data = fetch_historical_data(symbol)
+    historical_data.to_csv(os.path.join(data_dir, f'historical_{symbol}_data.csv'))
+    logging.info(f"Historical data for {symbol} saved to csv file")

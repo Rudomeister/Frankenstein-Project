@@ -1,8 +1,13 @@
 import json
 import numpy as np
-from openai import OpenAI
 import os
-config_path = os.path.join(os.path.dirname(__file__), '.', 'config.json')
+import logging
+from openai import OpenAI
+
+# Sett opp logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')  # Bruker levelname
+
+config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
 with open(config_path, 'r') as file:
     config = json.load(file)
 
@@ -38,16 +43,19 @@ def get_ai_response(client, messages):
     return response.choices[0].message.content.strip()
 
 if __name__ == "__main__":
-    SYMBOL = symbol
-    with open(f'processed_{SYMBOL}_news.json', 'r') as file:
+    import sys
+    if len(sys.argv) < 2:
+        raise ValueError("Symbol argument is missing. Usage: python trading_decision.py <symbol>")
+    symbol = sys.argv[1]
+
+    with open(f'data/processed_{symbol}_news.json', 'r') as file:
         processed_news = json.load(file)
     
     avg_positive_score, avg_negative_score = aggregate_sentiment(processed_news)
     trading_decision = make_trading_decision(avg_positive_score, avg_negative_score)
 
-    print(f"Average Positive Sentiment Score: {avg_positive_score}")
-    print(f"Average Negative Sentiment Score: {avg_negative_score}")
-    print(f"Trading Decision: {trading_decision}")
+    logging.info(f"Average Sentiment Score: {avg_positive_score}")
+    logging.info(f"Trading Decision: {trading_decision}")
 
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     
@@ -57,4 +65,5 @@ if __name__ == "__main__":
     ]
     
     ai_response = get_ai_response(client, conversation_history)
+    logging.info(f"AI Response: {ai_response}")
     print(f"AI Response: {ai_response}")
