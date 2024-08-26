@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import pandas_ta as ta
-import sys
 
 # Sett opp logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -11,16 +10,8 @@ config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
 with open(config_path, 'r') as file:
     config = json.load(file)
 
-project_root = os.path.dirname(os.path.abspath(__file__))
-if len(sys.argv) < 2:
-    raise ValueError("Symbol argument is missing. Usage: python prepare_data.py <symbol>")
-
-symbol = sys.argv[1]
-
-# Les konfigurasjonsfilen
-config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
-with open(config_path, 'r') as file:
-    config = json.load(file)
+symbol = config["symbol"]
+interval = config["interval"]
 
 def calculate_technical_indicators(df):
     # Beregn RSI
@@ -34,14 +25,23 @@ def calculate_technical_indicators(df):
         df['MACD_diff'] = macd['MACDh_12_26_9']
     return df
 
-def prepare_data(symbol):
+def prepare_data(symbol, interval):
     try:
         # Les inn historiske data
         project_root = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(project_root, '..', 'data')
-        historical_data_path = os.path.join(data_dir, f'historical_{symbol}_data.csv')
+        historical_data_path = os.path.join(data_dir, f'historical_{symbol}_{interval}_min_data.csv')
         historical_data = pd.read_csv(historical_data_path)
         logging.info(f'Read {len(historical_data)} rows of historical data from {historical_data_path}')
+
+        historical_data.rename(columns={
+            'startTime': 'Date',
+            'openPrice': 'Open',
+            'highPrice': 'High',
+            'lowPrice': 'Low',
+            'closePrice': 'Close',
+            'volume': 'Volume'
+        }, inplace=True)
 
         # Beregn tekniske indikatorer på historiske data
         historical_data = calculate_technical_indicators(historical_data)
@@ -89,4 +89,4 @@ def prepare_data(symbol):
         raise
 
 if __name__ == "__main__":
-    prepare_data(symbol)
+    prepare_data(symbol, interval)

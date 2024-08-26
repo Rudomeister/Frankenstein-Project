@@ -17,7 +17,8 @@ with open(config_path, 'r') as file:
 if len(sys.argv) < 2:
     raise ValueError("Symbol argument is missing. Usage: python train_model.py <symbol>")
 
-symbol = sys.argv[1]
+symbol = config['symbol']
+interval = config['interval']
 
 def create_dataset(data, look_back=1):
     X, Y = [], []
@@ -30,7 +31,7 @@ def train_model(symbol):
     try:
         project_root = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(project_root, '..', 'data')
-        combined_data_path = os.path.join(data_dir, f'combined_{symbol}_data.csv')
+        combined_data_path = os.path.join(data_dir, f'combined_{symbol}_{interval}_min_data.csv')
         
         dataset = pd.read_csv(combined_data_path)
         dataset = dataset[['Close', 'RSI', 'MACD', 'MACD_signal', 'MACD_diff', 'combined_score']].values.astype('float32')
@@ -48,7 +49,7 @@ def train_model(symbol):
         model.compile(loss='mean_squared_error', optimizer='adam')
         model.fit(X, Y, epochs=20, batch_size=1, verbose=2)
 
-        model_path = os.path.join(data_dir, f'model_{symbol}.keras')
+        model_path = os.path.join(data_dir, f'model_{symbol}_{interval}_min.keras')
         model.save(model_path)
         logging.info(f'Saved model for {symbol} at {model_path}')
 

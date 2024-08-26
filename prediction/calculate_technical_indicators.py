@@ -13,6 +13,7 @@ with open(config_path, 'r') as file:
     config = json.load(file)
 
 symbol = config['symbol']
+interval = config['interval']
 
 def calculate_technical_indicators(df):
     # Beregn RSI
@@ -31,7 +32,7 @@ if __name__ == "__main__":
         # Les inn de historiske dataene
         project_root = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(project_root, '..', 'data')
-        historical_data_path = os.path.join(data_dir, f'historical_{symbol}_data.csv')
+        historical_data_path = os.path.join(data_dir, f'historical_{symbol}_{interval}_min_data.csv')
         
         df = pd.read_csv(historical_data_path)
         logging.info(f"Read {len(df)} rows from {historical_data_path}")
@@ -40,7 +41,7 @@ if __name__ == "__main__":
         df = calculate_technical_indicators(df)
         
         # Lagre de oppdaterte dataene
-        technical_data_path = os.path.join(data_dir, f'technical_{symbol}_data.csv')
+        technical_data_path = os.path.join(data_dir, f'technical_{symbol}_{interval}_min_data.csv')
         df.to_csv(technical_data_path, index=False)
         
         logging.info(f"Calculated technical indicators and saved to {technical_data_path}")

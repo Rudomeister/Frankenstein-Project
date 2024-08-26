@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # Liste over skript som skal kjøres i riktig rekkefølge
     scripts_to_run = [
         os.path.join(project_root, 'sentiment', 'fetch_news.py'),
-#        os.path.join(project_root, 'sentiment', 'analyze_sentiment.py'),
+        os.path.join(project_root, 'sentiment', 'analyze_sentiment.py'),
         os.path.join(project_root, 'prediction', 'historical_data.py'),
         os.path.join(project_root, 'prediction', 'prepare_data.py'),
         os.path.join(project_root, 'prediction', 'calculate_technical_indicators.py'),

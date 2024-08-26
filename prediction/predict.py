@@ -15,6 +15,7 @@ with open(config_path, 'r') as file:
     config = json.load(file)
 
 symbol = config['symbol']
+interval = config['interval']
 
 def create_dataset(data, look_back=1):
     X, Y = [], []
@@ -27,8 +28,8 @@ def predict(symbol):
     try:
         project_root = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(project_root, '..', 'data')
-        combined_data_path = os.path.join(data_dir, f'combined_{symbol}_data.csv')
-        model_path = os.path.join(data_dir, f'model_{symbol}.h5')
+        combined_data_path = os.path.join(data_dir, f'combined_{symbol}_{interval}_min_data.csv')
+        model_path = os.path.join(data_dir, f'model_{symbol}_{interval}_min.keras')
 
         dataset = pd.read_csv(combined_data_path)
         dataset = dataset[['Close', 'RSI', 'MACD', 'MACD_signal', 'MACD_diff', 'combined_score']].values.astype('float32')
@@ -46,9 +47,9 @@ def predict(symbol):
         # Invers transform for Close verdien
         predictions = scaler.inverse_transform(np.hstack((predictions, np.zeros((predictions.shape[0], dataset.shape[1] - 1)))))[:, 0]
 
-        prediction_data_path = os.path.join(data_dir, f'predictions_{symbol}.csv')
+        prediction_data_path = os.path.join(data_dir, f'predictions_{symbol}_{interval}_min.csv')
         pd.DataFrame(predictions, columns=['Predicted_Close']).to_csv(prediction_data_path, index=False)
-        logging.info(f"Saved predictions for {symbol} at {prediction_data_path}")
+        logging.info(f"Saved predictions for {symbol} with {interval} minute interval, at {prediction_data_path}")
 
     except Exception as e:
         logging.error(f"Error in predicting: {e}")

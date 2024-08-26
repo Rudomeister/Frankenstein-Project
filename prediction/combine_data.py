@@ -12,13 +12,14 @@ with open(config_path, 'r') as file:
     config = json.load(file)
 
 symbol = config['symbol']
+interval = config['interval']
 
 def combine_data(symbol):
     try:
         # Les inn tekniske data
         project_root = os.path.dirname(os.path.abspath(__file__))
         data_dir = os.path.join(project_root, '..', 'data')
-        technical_data_path = os.path.join(data_dir, f'technical_{symbol}_data.csv')
+        technical_data_path = os.path.join(data_dir, f'technical_{symbol}_{interval}_min_data.csv')
         technical_data = pd.read_csv(technical_data_path)
         logging.info(f"Read {len(technical_data)} rows of technical data from {technical_data_path}")
 
@@ -56,9 +57,9 @@ def combine_data(symbol):
         combined_data = combined_data.set_index('Date')
 
         # Lagre de kombinerte dataene
-        combined_data_path = os.path.join(data_dir, f'combined_{symbol}_data.csv')
+        combined_data_path = os.path.join(data_dir, f'combined_{symbol}_{interval}_min_data.csv')
         combined_data.to_csv(combined_data_path)
-        logging.info(f"Combined data for {symbol} saved to csv file at {combined_data_path}")
+        logging.info(f"Combined data for {symbol} with interval {interval} saved to csv file at {combined_data_path}")
 
     except Exception as e:
         logging.error(f"Error in combining data: {e}")

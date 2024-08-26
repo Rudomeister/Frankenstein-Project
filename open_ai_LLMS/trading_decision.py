@@ -1,34 +1,21 @@
 import json
-import numpy as np
+import pandas as pd
+from openai import OpenAI
 import os
 import logging
-from openai import OpenAI
 
 # Sett opp logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')  # Bruker levelname
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Les konfigurasjonsfilen
 config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
 with open(config_path, 'r') as file:
     config = json.load(file)
 
 symbol = config['symbol']
+interval = config['interval']
 
-def aggregate_sentiment(processed_news):
-    positive_scores = [news['combined_score'] for news in processed_news if news['combined_sentiment'] == 'POSITIVE']
-    negative_scores = [news['combined_score'] for news in processed_news if news['combined_sentiment'] == 'NEGATIVE']
-    
-    avg_positive_score = np.mean(positive_scores) if positive_scores else 0
-    avg_negative_score = np.mean(negative_scores) if negative_scores else 0
-    
-    return avg_positive_score, avg_negative_score
-
-def make_trading_decision(avg_positive_score, avg_negative_score):
-    if avg_positive_score > avg_negative_score:
-        decision = "BUY"
-    else:
-        decision = "SELL"
-    
-    return decision
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 def get_ai_response(client, messages):
     response = client.chat.completions.create(
@@ -43,27 +30,29 @@ def get_ai_response(client, messages):
     return response.choices[0].message.content.strip()
 
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) < 2:
-        raise ValueError("Symbol argument is missing. Usage: python trading_decision.py <symbol>")
-    symbol = sys.argv[1]
+    try:
+        # Les kombinerte data med tekniske indikatorer og sentimentdata
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(project_root, '..', 'data')
+        combined_data_path = os.path.join(data_dir, f'combined_{symbol}_{interval}_min_data.csv')
+        
+        df = pd.read_csv(combined_data_path)
+        
+        # Ta de siste 30 linjene med data
+        historical_data_str = df.tail(60).to_string(index=False)
+        
+        avg_positive_score = df['combined_score'].mean()
 
-    with open(f'data/processed_{symbol}_news.json', 'r') as file:
-        processed_news = json.load(file)
-    
-    avg_positive_score, avg_negative_score = aggregate_sentiment(processed_news)
-    trading_decision = make_trading_decision(avg_positive_score, avg_negative_score)
+        logging.info(f"Average Sentiment Score: {avg_positive_score}")
 
-    logging.info(f"Average Sentiment Score: {avg_positive_score}")
-    logging.info(f"Trading Decision: {trading_decision}")
+        conversation_history = [
+            {"role": "system", "content": "Du er en elite trader i verdensklasse. Du har dyp kunnskap om markedsanalyse og handelsstrategier. Samarbeid med ditt team av eksperter for å ta de beste beslutningene."},
+            {"role": "user", "content": f"Her er de siste 60 dagene for ticker-symbolet {symbol} med historiske data og tekniske indikatorer:\n{historical_data_str}\nSentimentanalyse viser en gjennomsnittlig sentiment score på {avg_positive_score}. Hva synes du vi bør gjøre basert på disse dataene? Ta en beslutning og begrunn den."}
+        ]
+        
+        ai_response = get_ai_response(client, conversation_history)
+        logging.info(historical_data_str)
+        logging.info(f"AI Response: {ai_response}")
 
-    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-    
-    conversation_history = [
-        {"role": "system", "content": "Du er en elite trader i verdensklasse. Du har dyp kunnskap om markedsanalyse, maskinlæring og handelsstrategier. Samarbeid med ditt team av eksperter for å ta de beste beslutningene."},
-        {"role": "user", "content": f"Sentimentanalyse viser en gjennomsnittlig positiv score på {avg_positive_score} og en gjennomsnittlig negativ score på {avg_negative_score}. Beslutningen er å {trading_decision}. Hva er din vurdering?"}
-    ]
-    
-    ai_response = get_ai_response(client, conversation_history)
-    logging.info(f"AI Response: {ai_response}")
-    print(f"AI Response: {ai_response}")
+    except Exception as e:
+        logging.error(f"Error in trading decision script: {e}")
