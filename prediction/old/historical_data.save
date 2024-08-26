@@ -1,0 +1,25 @@
+import yfinance as yf
+import os
+import logging
+import json
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def fetch_historical_data(symbol):
+    ticker = yf.Ticker(symbol)
+    data = ticker.history(period="max", interval='1h')
+    return data
+
+if __name__ == "__main__":
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'config.json')
+    with open(config_path, 'r') as file:
+        config = json.load(file)
+    
+    symbol = config['symbol']
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(project_root, '..', 'data')
+    os.makedirs(data_dir, exist_ok=True)
+    
+    historical_data = fetch_historical_data(symbol)
+    historical_data.to_csv(os.path.join(data_dir, f'historical_{symbol}_data.csv'))
+    logging.info(f"Historical data for {symbol} saved to csv file")
